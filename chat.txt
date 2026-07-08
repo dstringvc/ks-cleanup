@@ -1,0 +1,16 @@
+I need to create a PowerShell script that will read an Excel spreadsheet, then use the data to query and update MS-SQL Server, then run a NodeJS application.
+
+Here are the basic steps:
+- Open a connection to MS-SQL Server. Read the connection string from the Windows environment variable DBConnectionStringProd
+- Open the KSUpdates.xlsx file. It is located in the current folder.
+- Iterate over the rows.
+- Use the State, Session, BillType, and BillNumber spreadsheet column values to query SQL Server. Create a parameterized query. The SQL should look like SELECT RawFileID FROM [RawFileID] WHERE [State]=@state AND [Session]=@session AND BillType=@billType AND BillNumber=@billNumber. The parameter values should be supplied with values from similarly names columns in the spreadsheet.
+- If no record is found, update the RawFileID column in the spreadsheet with "NotFound"
+- If a record is found, update the RawFileID column in the spreadsheet with the returned value and add the value to an array
+- Use the value to update a table in the database. The parameterized query should look like UPDATE [RawFileID] SET LegislationPath=@BillTextURL, LockURL=1 WHERE RawFileID=@rawFileID. The @BillTextURL parameter should be set to the spreadsheet column BillTextURL from the current row.
+- Use the value to update another table in the database. The parameterized query should look like UPDATE [Legis] SET EffectiveDate=@effectiveDate WHERE RawDataID=@rawFileID. There may be no qualifying row in the Legis table for any specific RawFileID value, so it's OK if the query returns 0 records updated. However, if a row in the database is updated, update the spreadsheet column EffectiveDateUpdated with the value True.
+- After iterating all the rows in the spreadsheet, close the spreadsheet.
+- Close the database connection
+- Write the array to a simple text file named download-rawfileid-ks.txt, one element per line in the file. Put the file in the current directory.
+- Run a NodeJS application using the command "node C:\\apps\\llarts\\downloader custom --state=TN --rawfilelist=c:\\apps\download-rawfileid-ks.txt -d"
+- Any errors should be written to a local file called ks-cleanup.log
