@@ -160,7 +160,7 @@ try {
         }
     }
 
-    Close-ExcelPackage -ExcelPackage $excelPackage -Save
+    Close-ExcelPackage -ExcelPackage $excelPackage
     $excelPackage = $null
 
     $foundRawFileIds | Set-Content -Path $outputPath -Encoding UTF8
