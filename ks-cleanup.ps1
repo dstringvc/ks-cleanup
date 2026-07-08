@@ -132,23 +132,25 @@ try {
             }
 
             $effectiveDateValue = $worksheet.Cells[$row, $columns['EffectiveDate']].Value
-            if ($null -eq $effectiveDateValue) { $effectiveDateValue = [DBNull]::Value }
 
             # Query that tries to find a row in the Legis table for this RawFileID and, if found,
-            # updates the EffectiveDate column (no matching row is expected and OK)
-            if ($EnableDatabaseUpdates) {
-                $updateLegisCommand = $connection.CreateCommand()
-                $updateLegisCommand.CommandText = 'UPDATE [Legis] SET EffectiveDate=@effectiveDate WHERE RawDataID=@rawFileID'
-                $updateLegisCommand.Parameters.AddWithValue('@effectiveDate', $effectiveDateValue) | Out-Null
-                $updateLegisCommand.Parameters.AddWithValue('@rawFileID', $rawFileId) | Out-Null
-                $legisRowsAffected = $updateLegisCommand.ExecuteNonQuery()
+            # updates the EffectiveDate column (no matching row is expected and OK). Skipped
+            # entirely when the spreadsheet's EffectiveDate cell is blank.
+            if ($null -ne $effectiveDateValue) {
+                if ($EnableDatabaseUpdates) {
+                    $updateLegisCommand = $connection.CreateCommand()
+                    $updateLegisCommand.CommandText = 'UPDATE [Legis] SET EffectiveDate=@effectiveDate WHERE RawDataID=@rawFileID'
+                    $updateLegisCommand.Parameters.AddWithValue('@effectiveDate', $effectiveDateValue) | Out-Null
+                    $updateLegisCommand.Parameters.AddWithValue('@rawFileID', $rawFileId) | Out-Null
+                    $legisRowsAffected = $updateLegisCommand.ExecuteNonQuery()
 
-                if ($legisRowsAffected -gt 0) {
-                    $worksheet.Cells[$row, $columns['EffectiveDateUpdated']].Value = $true
+                    if ($legisRowsAffected -gt 0) {
+                        $worksheet.Cells[$row, $columns['EffectiveDateUpdated']].Value = $true
+                    }
                 }
-            }
-            else {
-                Write-Log "Row $row [DRY RUN]: would UPDATE [Legis] SET EffectiveDate='$effectiveDateValue' WHERE RawDataID=$rawFileId"
+                else {
+                    Write-Log "Row $row [DRY RUN]: would UPDATE [Legis] SET EffectiveDate='$effectiveDateValue' WHERE RawDataID=$rawFileId"
+                }
             }
 
             $foundRawFileIds.Add([string]$rawFileId)
