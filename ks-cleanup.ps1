@@ -72,7 +72,7 @@ try {
     }
 
     # Validate the spreadsheet contains the expected columns
-    foreach ($col in 'State', 'Session', 'BillType', 'BillNumber', 'RawFileID', 'BillTextURL', 'EffectiveDate', 'EffectiveDateUpdated') {
+    foreach ($col in 'State', 'Session', 'BillType', 'BillNumber', 'RawFileID', 'BillTextURL', 'EffectiveDate', 'EffectiveDateUpdated', 'ChapterNumber') {
         if (-not $columns.ContainsKey($col)) {
             throw "Expected column '$col' not found in worksheet."
         }
@@ -134,13 +134,16 @@ try {
             $effectiveDateValue = $worksheet.Cells[$row, $columns['EffectiveDate']].Value
 
             # Query that tries to find a row in the Legis table for this RawFileID and, if found,
-            # updates the EffectiveDate column (no matching row is expected and OK). Skipped
-            # entirely when the spreadsheet's EffectiveDate cell is blank.
+            # updates the EffectiveDate and PublicActNo columns (no matching row is expected and
+            # OK). Skipped entirely when the spreadsheet's EffectiveDate cell is blank.
             if ($null -ne $effectiveDateValue) {
+                $chapterNumber = $worksheet.Cells[$row, $columns['ChapterNumber']].Text
+
                 if ($EnableDatabaseUpdates) {
                     $updateLegisCommand = $connection.CreateCommand()
-                    $updateLegisCommand.CommandText = 'UPDATE [Legis] SET EffectiveDate=@effectiveDate WHERE RawDataID=@rawFileID'
+                    $updateLegisCommand.CommandText = 'UPDATE [Legis] SET EffectiveDate=@effectiveDate, PublicActNo=@publicActNo WHERE RawDataID=@rawFileID'
                     $updateLegisCommand.Parameters.AddWithValue('@effectiveDate', $effectiveDateValue) | Out-Null
+                    $updateLegisCommand.Parameters.AddWithValue('@publicActNo', $chapterNumber) | Out-Null
                     $updateLegisCommand.Parameters.AddWithValue('@rawFileID', $rawFileId) | Out-Null
                     $legisRowsAffected = $updateLegisCommand.ExecuteNonQuery()
 
@@ -149,7 +152,7 @@ try {
                     }
                 }
                 else {
-                    Write-Log "Row $row [DRY RUN]: would UPDATE [Legis] SET EffectiveDate='$effectiveDateValue' WHERE RawDataID=$rawFileId"
+                    Write-Log "Row $row [DRY RUN]: would UPDATE [Legis] SET EffectiveDate='$effectiveDateValue', PublicActNo='$chapterNumber' WHERE RawDataID=$rawFileId"
                 }
             }
 
