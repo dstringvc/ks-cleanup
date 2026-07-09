@@ -185,7 +185,7 @@ finally {
 # but only when database updates are actually enabled for this run
 if ($EnableDatabaseUpdates) {
     try {
-        & node C:\apps\llarts\downloader custom --state=TN "--rawfilelist=$outputPath" -d
+        & node C:\apps\llarts\downloader custom --state=KS "--rawfilelist=$outputPath" -d
     }
     catch {
         Write-Log "Node downloader error: $($_.Exception.Message)"
